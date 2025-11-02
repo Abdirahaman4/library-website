@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Library - Login/Register</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- 💠 Qaybta guud ee Login iyo Register -->
+  <div class="auth-container" id="authContainer">
+
+    <!-- 🔹 Foomka Login (gelitaanka isticmaalaha) -->
+    <div class="form-box sign-in-box">
+      <form id="loginForm">
+        <h2>log in </h2>
+        <!-- Gelinta emailka -->
+         
+        <input type="email" id="loginEmail" placeholder=" Geli dee Emailka ha na soo eegine " required />
+        
+        <!-- Sanduuqa password-ka iyo badhanka muujinta qarinta -->
+        <div class="password-box">
+          <input type="password" id="loginPassword" placeholder="Password xasuus bal" required />
+          
+          <span id="toggleLoginPass">👁️</span>
+        </div>
+
+        <!-- Badhanka Login -->
+        <button type="submit" class="btn">Sign In</button>
+        
+        <!-- Farriin la soo bandhigayo haddii qalad dhaco -->
+        <p id="loginMessage"></p>
+      </form>
+    </div>
+
+    <!-- 🔹 Foomka Register (diiwaangelinta isticmaalaha cusub) -->
+    <div class="form-box sign-up-box">
+      <form id="registerForm">
+        <h2>Create Account</h2>
+        <!-- Magaca isticmaalaha -->
+        <input type="text" id="name" placeholder="Full Name" required />
+        <!-- Emailka -->
+        <input type="email" id="email" placeholder="Email" required />
+
+        <!-- Password iyo icon-ka muujinta/qarinta -->
+        <div class="password-box">
+          <input type="password" id="password" placeholder="Password" required />
+          <span id="togglePass">👁️</span>
+        </div>
+
+        <!-- Doorashada doorka (User ama Admin) -->
+        <!-- <select id="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select> -->
+
+        <!-- Badhanka Sign Up -->
+        <button type="submit" class="btn">Sign Up</button>
+
+        <!-- Farriin diiwaangelinta kadib -->
+        <p id="registerMessage"></p>
+      </form>
+    </div>
+
+    <!-- 🔹 Qaybta midigta (macluumaadka iyo badhannada isbeddelka foomamka) -->
+    <div class="right-panel" id="rightPanel">
+      <div class="panel-content">
+
+        <!-- Qaybta loogu talagalay Sign In -->
+        <div class="panel-signin">
+          <h2>Hello, Friend!</h2>
+          <p>Fill up personal information and start your journey with us.</p>
+          <!-- Badhanka muujinta foomka Sign Up -->
+          <button id="showSignUp" class="outline-btn">Sign Up</button>
+        </div>
+
+        <!-- Qaybta loogu talagalay Sign Up -->
+        <div class="panel-signup">
+          <h2>Welcome Back!</h2>
+          <p>To keep connected with us please login with your account.</p>
+          <!-- Badhanka muujinta foomka Sign In -->
+          <button id="showSignIn" class="outline-btn">Sign In</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Faylka JavaScript ee shaqada foomamka -->
+  <script src="js/main.js"></script>
+</body>
+</html>

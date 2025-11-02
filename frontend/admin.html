@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Library Admin Dashboard</title>
+<style>
+/* Define CSS custom properties (variables) for theme colors */
+:root { --bg:#f4f6f8; --sidebar:#1f2937; --accent:#2563eb; --muted:#6b7280; --card:#fff; }
+/* Universal selector to apply box-sizing, remove default margin and padding */
+* { box-sizing:border-box; margin:0; padding:0; }
+/* Style the body: set font, enable flex layout for main content, minimum height, and background color */
+body { font-family:Inter,sans-serif; display:flex; flex-direction:column; min-height:100vh; background:var(--bg); }
+/* Style the header/navbar */
+header { height:64px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-bottom:1px solid #e6e9ee; box-shadow:0 1px 0 rgba(16,24,40,0.03); }
+/* Style the main title/logo in the header */
+header h1 { font-size:18px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+/* Style the right-side container in the header */
+header .right { display:flex; gap:12px; align-items:center; }
+/* Style the main application container: flex layout, takes remaining height */
+.app { display:flex; flex:1; min-height:0; }
+/* Style the sidebar: fixed width, dark background, flex column layout */
+.sidebar { width:240px; background:var(--sidebar); color:white; display:flex; flex-direction:column; padding:18px 12px; gap:12px; }
+/* Style the sidebar brand/title */
+.brand { font-weight:700; font-size:16px; margin-bottom:8px; }
+/* Style the navigation buttons in the sidebar */
+.nav-btn { background:transparent; color:#e6eefc; border:none; width:100%; text-align:left; padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; gap:8px; align-items:center; transition:background 0.2s; }
+/* Hover effect for sidebar buttons */
+.nav-btn:hover { background: rgba(255,255,255,0.08); }
+/* Active state for the current sidebar button */
+.nav-btn.active { background: rgba(255, 255, 255, 0.12); }
+/* Style the main content area: takes available space, padding, enables scrolling */
+main { flex:1; padding:20px; overflow:auto; min-width:0; }
+/* General style for content cards */
+.card { background:var(--card); padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(15,23,42,0.04); margin-bottom:16px; }
+/* Style for tables: full width, collapse borders */
+table { width:100%; border-collapse:collapse; }
+/* Style for table headers and data cells (kept for reports, etc.) */
+th,td { padding:10px 12px; border-bottom:1px solid #eef2f6; font-size:14px; color:#111827; text-align: left; }
+/* Style for table header row cells */
+thead th { background:#f8fafc; font-weight:600; color:#374151; }
+/* General style for buttons */
+.btn { padding:8px 12px; border-radius:6px; border:none; cursor:pointer; font-weight:600; }
+/* Style for primary action buttons */
+.btn-primary { background:var(--accent); color:white; transition:background 0.3s; }
+.btn-primary:hover { background: #1e55c7; }
+/* Style for ghost/secondary action buttons */
+.btn-ghost { background:transparent; border:1px solid #e6eefc; color:#111827; }
+/* Style for danger/destructive action buttons */
+.btn-danger { background:#dc2626; color:white; transition:background 0.3s; }
+.btn-danger:hover { background: #b91c1c; }
+/* Style for the modal overlay/backdrop */
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:60; }
+/* Style for the modal content box */
+.modal { background:white; width:720px; max-width:95%; border-radius:10px; padding:18px; box-shadow:0 10px 30px rgba(2,6,23,0.2); }
+/* Style for modal headings */
+.modal h3 { margin-top:0; }
+/* Utility class for flex layout with spacing */
+.flex { display:flex; gap:12px; align-items:center; }
+/* Utility class to push an element to the right */
+.right { margin-left:auto; }
+/* Style for text input fields and textareas */
+.input,textarea { width:100%; padding:8px 10px; border:1px solid #e6e9ee; border-radius:6px; font-size:14px; }
+/* Utility class for small text */
+.small { font-size:13px; color:var(--muted); }
+/* Utility class for muted/secondary text */
+.muted { color:var(--muted); font-size:13px; }
+/* Style for the stats grid container (responsive layout) */
+.stats-container { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:25px; }
+/* Style for individual statistic cards */
+.stat-card { background:#fff; border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,0.08); display:flex; align-items:center; }
+/* Style for statistic icon and text info container */
+.stat-info { display:flex; align-items:center; gap:12px; }
+/* Style for the statistic icons (background/size) */
+.stat-info i { font-size:26px; padding:12px; border-radius:50%; color:white; }
+/* Specific color for Stats icons */
+.stat-card.books i { background:#3b82f6; }
+.stat-card.users i { background:#10b981; }
+.stat-card.downloads i { background:#f59e0b; }
+.stat-card.reads i { background:#592599; }
+/* Style for the stat label/description */
+.label { font-size:14px; color:#6b7280; }
+/* Style for the stat value/number */
+.value { font-size:22px; font-weight:700; color:#111827; }
+/* Style for the chart card */
+.chart-card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.08); margin-bottom:16px; }
+/* Media query to hide sidebar on smaller screens (e.g., mobile) */
+@media(max-width:880px){.sidebar{display:none;}}
+
+/* --- TYPING ANIMATION CSS (for Dashboard Welcome) --- */
+.typing-container { display: inline-block; }
+.typing-text {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+    overflow: hidden;
+    border-right: .15em solid var(--accent);
+    white-space: nowrap;
+    letter-spacing: .10em;
+    width: 0;
+    animation: 
+        typing 3.0s steps(28) 0.5s forwards, 
+        backspace 1.0s steps(7) 3.5s forwards, 
+        type-final 1.0s steps(10) 4.5s forwards, 
+        blink-caret .75s step-end infinite;
+}
+@keyframes typing { from { width: 0; } to { width: 73.68%; } } 
+@keyframes backspace { from { width: 73.68%; } to { width: 55.26%; } } 
+@keyframes type-final { from { width: 55.26%; } to { width: 100%; } } 
+@keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: var(--accent); } }
+
+/* --- BOOK MANAGEMENT STYLES (Book Grid) --- */
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding-top: 5px; }
+.book-card { background: var(--card); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+.book-card:hover { transform: translateY(-5px); box-shadow: 0 8px 18px rgba(0,0,0,0.1); }
+.book-cover { width: 100%; height: 180px; object-fit: cover; background: #e0e7ff; border-bottom: 1px solid #f3f4f6; }
+.book-content { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
+.book-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.book-author { font-size: 14px; color: var(--accent); margin-bottom: 10px; }
+.book-actions { margin-top: auto; display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid #f3f4f6; }
+.book-actions .btn { flex: 1; font-size: 13px; padding: 8px; }
+
+/* --- USERS MANAGEMENT STYLES (User Grid) --- */
+.users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding-top: 5px; }
+.user-card { 
+    display: flex; 
+    align-items: center; 
+    padding: 15px; 
+    border-radius: 12px; 
+    background: var(--card); 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.user-avatar { 
+    width: 48px; 
+    height: 48px; 
+    border-radius: 50%; 
+    background: var(--accent); 
+    color: white; 
+    font-size: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0;
+}
+.user-info { margin-left: 15px; }
+.user-name { font-weight: 600; font-size: 16px; }
+.user-role { font-size: 13px; color: #10b981; font-weight: 500; }
+.user-email { font-size: 13px; color: var(--muted); }
+
+/* --- LOGS MANAGEMENT STYLES (Reads, Downloads, Messages - List View) --- */
+.log-list { display: flex; flex-direction: column; gap: 10px; padding-top: 5px; }
+.log-item {
+    background: var(--card);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    border-left: 4px solid #9ca3af; /* Default log color */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.log-item.read { border-left-color: #592599; }
+.log-item.download { border-left-color: #f59e0b; }
+.log-item.message { border-left-color: #10b981; flex-direction: column; align-items: stretch; }
+
+.log-details { font-size: 14px; color: #111827; }
+.log-date { font-size: 12px; color: var(--muted); margin-top: 4px;}
+
+/* Message specific styles */
+.message-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.message-content { margin-bottom: 10px; padding: 8px; background: #f9fafb; border-radius: 4px; font-style: italic; }
+.message-reply { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.message-actions .btn { padding: 6px 10px; font-size: 12px; }
+.message-reply-text { font-weight: 600; color: #3b82f6; }
+</style>
+</head>
+<body>
+<header>
+    <h1>📚 Library Admin</h1>
+    <div class="right">
+        <div id="adminName" class="small muted">Admin</div>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">Admin Panel</div>
+        <button class="nav-btn active" data-page="dashboard" onclick="navClick(event)">🏠 Dashboard</button>
+    <button class="nav-btn" data-page="books" onclick="navClick(event)">📚 Books Management</button>
+    <button class="nav-btn" data-page="users" onclick="navClick(event)">👤 Library Users</button>
+    <button class="nav-btn" data-page="reads" onclick="navClick(event)">📖 Book Reads Log</button>
+    <button class="nav-btn" data-page="downloads" onclick="navClick(event)">📥 Downloads Log</button>
+    <button class="nav-btn" data-page="reports" onclick="navClick(event)">📈 Analytics & Reports</button>
+    <button class="nav-btn" data-page="messages" onclick="navClick(event)">✉️ User Messages</button>
+        <div style="flex:1"></div>
+        <div class="small muted">Version 1.0</div>
+  </aside>
+
+    <main>
+        <div id="page-dashboard" class="page">
+      <div class="card">
+          <div class="typing-container">
+              <h2 class="typing-text">Welcome to the Library Dashboard!</h2>
+          </div>
+          <p class="muted">Maamul buugaagta, isticmaalayaasha, iyo tirakoobyada. (Manage books, users, and statistics.)</p>
+      </div>
+      <div class="stats-container">
+        <div class="stat-card books"><div class="stat-info"><i class="fas fa-book"></i><div><div class="label">Total Books</div><div id="statBooks" class="value">0</div></div></div></div>
+        <div class="stat-card users"><div class="stat-info"><i class="fas fa-users"></i><div><div class="label">Total Users</div><div id="statUsers" class="value">0</div></div></div></div>
+        <div class="stat-card downloads"><div class="stat-info"><i class="fas fa-download"></i><div><div class="label">Total Downloads</div><div id="statDownloads" class="value">0</div></div></div></div>
+        <div class="stat-card reads"><div class="stat-info"><i class="fas fa-book-reader"></i><div><div class="label">Total Reads</div><div id="statReads" class="value">0</div></div></div></div>
+      </div>
+      <div class="chart-card"><canvas id="statsChart" height="120"></canvas></div>
+    </div>
+
+        <div id="page-books" class="page" style="display:none">
+      <div class="card flex">
+          <h2>📘 Books Management</h2>
+          <button class="btn btn-primary right" onclick="openBookModal()">+ Add New Book</button>
+      </div>
+      <div class="books-grid" id="booksGrid">
+          <p class="muted" id="loadingBooks">Loading books...</p>
+      </div>
+    </div>
+
+        <div id="page-users" class="page" style="display:none">
+      <div class="card">
+          <h2>👥 Library Users</h2>
+          <p class="muted">List of all registered users and their roles.</p>
+      </div>
+      <div class="users-grid" id="usersGrid">
+          <p class="muted" id="loadingUsers">Loading users...</p>
+      </div>
+    </div>
+
+        <div id="page-reads" class="page" style="display:none">
+      <div class="card"><h2>📖 Book Reads Log</h2></div>
+      <div class="log-list" id="readsList">
+          <p class="muted">Loading read activities...</p>
+      </div>
+    </div>
+
+        <div id="page-downloads" class="page" style="display:none">
+      <div class="card"><h2>⬇️ Downloads Log</h2></div>
+      <div class="log-list" id="downloadsList">
+          <p class="muted">Loading download activities...</p>
+      </div>
+    </div>
+
+        <div id="page-messages" class="page" style="display:none">
+      <div class="card"><h2>💬 User Messages</h2></div>
+      <div class="log-list" id="messagesList">
+          <p class="muted">Loading messages...</p>
+      </div>
+    </div>
+
+        <div id="page-reports" class="page" style="display:none">
+      <div class="card">
+        <h3>📈 Analytics & Report Generator</h3>
+        <p class="muted">Generate detailed activity reports for specific books.</p>
+        <div class="flex" style="margin-top:10px">
+          <input type="number" id="reportBookId" class="input" placeholder="Enter Book ID to report..." />
+          <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+          <button class="btn btn-ghost" onclick="window.print()">🖨️ Print</button>
+        </div>
+        <div id="reportResult" style="margin-top:15px"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+        <h3 id="modalTitle">Add Book</h3>
+        <form id="bookForm" enctype="multipart/form-data">
+            <input type="text" id="bookTitle" name="title" class="input" placeholder="Book Title" required />
+            <input type="text" id="bookAuthor" name="author" class="input" placeholder="Author" style="margin-top:8px" required />
+            <textarea id="bookDesc" name="description" class="input" placeholder="Description" style="margin-top:8px"></textarea>
+            <label class="small" style="margin-top:8px">Upload PDF:</label>
+      <input type="file" id="bookFile" name="file" class="input" accept=".pdf" />
+            <label class="small" style="margin-top:8px">Upload Image:</label>
+      <input type="file" id="bookImage" name="image" class="input" accept="image/*" />
+            <div class="flex" style="margin-top:12px">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-ghost right" onclick="closeModal()">Cancel</button>
+        <input type="hidden" id="bookId" name="id" />       </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Base URL for the backend API
+const apiBase = 'http://localhost:3000/api';
+// Variable to store the ID of the book being edited (null for new book)
+let editBookId = null;
+// Variable to hold the Chart.js instance
+let statsChart;
+
+// Helper function to get initials for the user avatar
+function getInitials(name) {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0][0].toUpperCase();
+}
+
+// Function to handle navigation button clicks
+function navClick(e){
+  // Remove 'active' class from all navigation buttons
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  // Add 'active' class to the clicked button
+  e.currentTarget.classList.add('active');
+  // Hide all page content sections
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  // Get the target page ID from the button's data-page attribute
+  const page = e.currentTarget.dataset.page;
+  // Show the corresponding page content
+  document.getElementById('page-'+page).style.display='block';
+  // Fetch data based on the page:
+  if(page==='dashboard') fetchStats();
+  if(page==='books') fetchBooks();
+  if(page==='users') fetchUsers(); // Updated call
+  if(page==='reads') fetchReads(); // Updated call
+  if(page==='downloads') fetchDownloads(); // Updated call
+  if(page==='messages') fetchMessages(); // Updated call
+}
+
+// Function to log out the user
+function logout(){ 
+  // Remove the token from local storage
+  localStorage.removeItem('token'); 
+  // Redirect to the login page (or refresh)
+  window.location.href = './index.html';
+}
+
+// Function to open the Add/Edit Book modal
+function openBookModal(book=null){
+  // Display the modal backdrop
+  document.getElementById('modalBackdrop').style.display='flex';
+  // Clear the form fields
+  document.getElementById('bookForm').reset();
+  // Reset the edit ID
+  editBookId=null;
+  // Set the modal title based on whether a book object was passed
+  document.getElementById('modalTitle').textContent=book?'Edit Book':'Add Book';
+  // If a book object is passed, populate the form for editing
+  if(book){ 
+    editBookId=book.id; 
+    document.getElementById('bookTitle').value=book.title; 
+    document.getElementById('bookAuthor').value=book.author; 
+    document.getElementById('bookDesc').value=book.description; 
+    // Reset file inputs on edit since they require re-uploading the file
+    document.getElementById('bookFile').value = '';
+    document.getElementById('bookImage').value = '';
+  }
+}
+// Function to close the modal
+function closeModal(){ document.getElementById('modalBackdrop').style.display='none'; }
+
+// Event listener for the book form submission (Add/Edit)
+document.getElementById('bookForm').addEventListener('submit', async e=>{
+  e.preventDefault(); // Prevent default form submission
+  const token=localStorage.getItem('token'); // Get auth token
+  const formData=new FormData(e.target); // Get form data
+  const method=editBookId?'PUT':'POST'; // Determine method (PUT for edit, POST for new)
+  const url=`${apiBase}/books${editBookId?'/'+editBookId:''}`; // Construct URL
+  // Send the request to the API
+  const res = await fetch(url,{method,headers:{Authorization:`Bearer ${token}`},body:formData});
+  
+  if(!res.ok) {
+    alert('Operation failed. Check server and authorization.');
+  } else {
+    closeModal(); // Close the modal
+    fetchBooks(); // Refresh the book list
+  }
+});
+
+// Function to fetch and display the list of books (GRID VIEW)
+async function fetchBooks(){
+  const token=localStorage.getItem('token'); // Get auth token
+  const grid = document.getElementById('booksGrid');
+  grid.innerHTML = '<p class="muted">Loading books...</p>'; // Show loading message
+
+  // Fetch books from the API
+  const res=await fetch(`${apiBase}/books`,{headers:{Authorization:`Bearer ${token}`}});
+  const data=await res.json(); // Parse JSON response
+  grid.innerHTML=''; // Clear loading message
+
+  // Iterate over the books and create book cards
+  data.forEach(b=>{ 
+      const imageUrl = b.image_url ? `${apiBase}/books/image/${b.id}` : 'https://via.placeholder.com/280x180?text=No+Cover'; // Placeholder if no image
+      
+      grid.innerHTML+=`
+      <div class="book-card">
+          <img src="${imageUrl}" onerror="this.src='https://via.placeholder.com/280x180?text=No+Cover'" alt="${b.title} cover" class="book-cover">
+          <div class="book-content">
+              <div class="book-title">${b.title}</div>
+              <div class="book-author">${b.author}</div>
+              <p class="small muted">${b.description ? b.description.substring(0, 80) + '...' : 'No description provided.'}</p>
+              <div class="book-actions">
+                  <button class='btn btn-ghost' onclick='openBookModal(${JSON.stringify(b).replace(/"/g,'&quot;')})'>Edit</button>
+                  <button class='btn btn-danger' onclick='deleteBook(${b.id})'>Delete</button>
+              </div>
+          </div>
+      </div>
+      `; 
+  });
+  if (data.length === 0) {
+      grid.innerHTML = '<p class="muted">No books found in the library. Click "Add New Book" to begin.</p>';
+  }
+}
+// Function to delete a book
+async function deleteBook(id){ 
+  // Confirm before deleting
+  if(confirm('Are you sure you want to delete this book? This action cannot be undone.')){ 
+    const token=localStorage.getItem('token'); // Get auth token
+    // Send DELETE request to the API
+    await fetch(`${apiBase}/books/${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}}); 
+    fetchBooks(); // Refresh the book list
+  } 
+}
+
+// Users (GRID VIEW)
+// Function to fetch and display the list of users
+async function fetchUsers(){ 
+  const token=localStorage.getItem('token'); 
+  const res=await fetch(`${apiBase}/auth/`,{headers:{Authorization:`Bearer ${token}`}}); 
+  const data=await res.json(); 
+  const grid=document.getElementById('usersGrid'); 
+  grid.innerHTML=''; 
+  // Populate the users grid
+  data.forEach((u,i)=>{
+        const initials = getInitials(u.name);
+        grid.innerHTML+=`
+        <div class="user-card">
+            <div class="user-avatar">${initials}</div>
+            <div class="user-info">
+                <div class="user-name">${u.name}</div>
+                <div class="user-email">${u.email}</div>
+                <div class="user-role">${u.role.toUpperCase()}</div>
+            </div>
+        </div>
+        `;
+    });
+    if (data.length === 0) {
+        grid.innerHTML = '<p class="muted">No users found.</p>';
+    }
+}
+
+// Reads (LOG LIST VIEW)
+// Function to fetch and display the reads log
+async function fetchReads(){ 
+  const token=localStorage.getItem('token'); 
+  const list=document.getElementById('readsList');
+    list.innerHTML = '<p class="muted">Loading read activities...</p>';
+  try{ 
+    const res=await fetch(`${apiBase}/reads/`,{headers:{Authorization:`Bearer ${token}`}}); 
+    const data=await res.json(); 
+    list.innerHTML=''; 
+    // Populate the reads list
+    data.forEach((r)=>{
+        const userName = r.user_name || 'Anonymous User';
+        const bookTitle = r.book_title || 'Unknown Book';
+        const date = r.read_date ? new Date(r.read_date).toLocaleString() : 'Unknown Date';
+        
+        list.innerHTML+=`
+        <div class="log-item read">
+            <div class="log-details">
+                <strong>${userName}</strong> started reading <strong>"${bookTitle}"</strong>
+                <div class="log-date"><i class="fas fa-clock"></i> ${date}</div>
+            </div>
+            <span class="small muted">Read Log #${r.id}</span>
+        </div>
+        `;
+    });
+    if (data.length === 0) {
+        list.innerHTML = '<p class="muted">No reading activity recorded.</p>';
+    }
+  }catch(err){
+    list.innerHTML='<p class="muted">Failed to fetch reading logs.</p>'; 
+  }
+}
+
+// Downloads (LOG LIST VIEW)
+// Function to fetch and display the downloads log
+async function fetchDownloads(){ 
+  const token=localStorage.getItem('token'); 
+  const list=document.getElementById('downloadsList');
+    list.innerHTML = '<p class="muted">Loading download activities...</p>';
+  try{ 
+    const res=await fetch(`${apiBase}/downloads/`,{headers:{Authorization:`Bearer ${token}`}}); 
+    const data=await res.json(); 
+    list.innerHTML=''; 
+    // Populate the downloads list
+    data.forEach((d)=>{
+        const userName = d.user_name || 'Anonymous User';
+        const bookTitle = d.book_title || 'Unknown Book';
+        const date = d.download_date ? new Date(d.download_date).toLocaleString() : 'Unknown Date';
+        
+        list.innerHTML+=`
+        <div class="log-item download">
+            <div class="log-details">
+                <strong>${userName}</strong> downloaded <strong>"${bookTitle}"</strong>
+                <div class="log-date"><i class="fas fa-cloud-download-alt"></i> ${date}</div>
+            </div>
+            <span class="small muted">Download Log #${d.id}</span>
+        </div>
+        `;
+    });
+    if (data.length === 0) {
+        list.innerHTML = '<p class="muted">No download activity recorded.</p>';
+    }
+  }catch(err){
+    list.innerHTML='<p class="muted">Failed to fetch download logs.</p>'; 
+  }
+}
+
+// Stats (UNCHANGED)
+// Function to fetch overall statistics for the dashboard
+async function fetchStats(){
+  try{
+    const token=localStorage.getItem("token");
+    const res=await fetch(`${apiBase}/totals`,{headers:token?{Authorization:`Bearer ${token}`}:{}});
+    const data=await res.json();
+    document.getElementById("statBooks").textContent=data.total_books??0;
+    document.getElementById("statUsers").textContent=data.total_users??0;
+    document.getElementById("statDownloads").textContent=data.total_downloads??0;
+    document.getElementById("statReads").textContent=data.total_reads??0;
+    updateStatsChart(data);
+  }catch(err){ 
+    console.error(err); 
+    document.getElementById("statBooks").textContent=0; 
+    document.getElementById("statUsers").textContent=0; 
+    document.getElementById("statDownloads").textContent=0; 
+    document.getElementById("statReads").textContent=0;
+  }
+}
+function updateStatsChart(data){
+  const ctx=document.getElementById("statsChart").getContext("2d"); 
+  const chartData=[data.total_books??0,data.total_users??0,data.total_downloads??0,data.total_reads??0];
+  if(statsChart) statsChart.destroy();
+  statsChart=new Chart(ctx,{type:"bar",data:{labels:["Books","Users","Downloads","Reads"],datasets:[{label:"Totals Overview",data:chartData,backgroundColor:["#3b82f6","#10b981","#f59e0b","#592599"],borderRadius:10} ] },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:"#f3f4f6"}},x:{grid:{display:false}}}}});
+}
+
+// Messages (LOG LIST VIEW - Card Style)
+// Function to fetch and display user messages
+async function fetchMessages(){ 
+  const token=localStorage.getItem('token'); 
+  const list=document.getElementById('messagesList');
+    list.innerHTML = '<p class="muted">Loading messages...</p>';
+  const res=await fetch(`${apiBase}/messages`,{headers:{Authorization:`Bearer ${token}`}}); 
+  const data=await res.json(); 
+  list.innerHTML=''; 
+
+  // Populate the messages list
+  data.forEach((m)=>{
+        const replyText = m.reply ? `<span class="message-reply-text">Replied</span>` : `<span class="muted">Awaiting Reply</span>`;
+        
+        list.innerHTML+=`
+        <div class="log-item message">
+            <div class="message-header">
+                <div>
+                    <strong>${m.name}</strong> (${m.email})
+                    <div class="log-date"><i class="fas fa-calendar-alt"></i> ${new Date(m.created_at).toLocaleString()}</div>
+                </div>
+                ${replyText}
+            </div>
+            <div class="message-content">
+                Message: ${m.message}
+            </div>
+            <div class="message-reply">
+                <span class="small muted">Admin Reply: ${m.reply||'N/A'}</span>
+                <div class="message-actions">
+                    <button class="btn btn-primary" onclick="replyMessage(${m.id})"><i class="fas fa-reply"></i> Reply</button>
+                    <button class="btn btn-danger" onclick="deleteMessage(${m.id})"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+    if (data.length === 0) {
+        list.innerHTML = '<p class="muted">No user messages found.</p>';
+    }
+}
+
+// Function to reply to a user message
+async function replyMessage(id){ 
+  const reply=prompt('Write your reply:'); 
+  if(!reply) return; // Exit if no reply is entered
+  const token=localStorage.getItem('token'); 
+  // Send PUT request to update the reply
+  await fetch(`${apiBase}/messages/${id}/reply`,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({reply})}); 
+  fetchMessages(); // Refresh messages list
+}
+
+// Function to delete a user message
+async function deleteMessage(id){ 
+  if(!confirm('Delete this message?')) return; // Confirm deletion
+  const token=localStorage.getItem('token'); 
+  // Send DELETE request to the API
+  await fetch(`${apiBase}/messages/${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}}); 
+  fetchMessages(); // Refresh messages list
+}
+
+// Report (UPDATED HTML/CSS structure, logic unchanged)
+// Function to generate a report for a specific book ID
+async function generateReport(){
+  const id = document.getElementById('reportBookId').value; // Get the book ID input
+  const token = localStorage.getItem('token');
+  if(!id) return alert('Fadlan geli Book ID. (Please enter Book ID.)'); // Alert if no ID is entered
+  const resultDiv = document.getElementById('reportResult');
+    resultDiv.innerHTML = '<p class="muted">Generating report...</p>';
+
+  // Fetch the book report from the API
+  const res = await fetch(`${apiBase}/books/report/${id}`, { headers:{ Authorization:`Bearer ${token}` }});
+  if(!res.ok) {
+        resultDiv.innerHTML = '<p class="muted" style="color:#dc2626;">Error: Book not found or failed to fetch report.</p>';
+        return;
+    }
+  const data = await res.json();
+  
+  // Populate the report result section with fetched data (using the default table for dense report data)
+  resultDiv.innerHTML = `
+    <div class="card" style="margin-top:10px;">
+        <h4 style="margin-bottom: 10px;">Report for: <b>${data.book.title}</b> by ${data.book.author}</h4>
+        <div class="flex" style="justify-content: space-around; margin-bottom: 15px;">
+            <p><strong>Total Reads:</strong> <span style="color:#592599;">${data.totalReads}</span></p>
+            <p><strong>Total Downloads:</strong> <span style="color:#f59e0b;">${data.totalDownloads}</span></p>
+        </div>
+
+        <h5 style="margin-top:10px">📖 Recent Reads:</h5>
+        <table>
+            <thead><tr><th>User</th><th>Date</th></tr></thead>
+            <tbody>
+              ${data.reads.map((r) => `
+                <tr><td>${r.name}</td><td>${new Date(r.read_date).toLocaleString()}</td></tr>
+              `).join('')}
+            </tbody>
+        </table>
+
+        <h5 style="margin-top:15px">⬇️ Recent Downloads:</h5>
+        <table>
+            <thead><tr><th>User</th><th>Date</th></tr></thead>
+            <tbody>
+              ${data.downloads.map((d) => `
+                <tr><td>${d.name}</td><td>${new Date(d.download_date).toLocaleString()}</td></tr>
+              `).join('')}
+            </tbody>
+        </table>
+    </div>
+  `;
+}
+
+// Initial data fetching and recurring stats update
+fetchStats(); 
+fetchBooks(); 
+// Set interval to refresh stats every 10 seconds (10000ms)
+setInterval(fetchStats,10000);
+</script>
+</body>
+</html>
